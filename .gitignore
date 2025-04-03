@@ -1,0 +1,13 @@
+/indexer-core-service/target/
+/indexer-core-service/Cargo.lock
+/indexer-core-service/target/debug/
+/indexer-core-service/target/release/
+/indexer-core-service/.idea/
+/indexer-core-service/.vscode/
+/indexer-core-service/.DS_Store
+
+# Ignore logs
+*.log
+
+# Ignore environment files
+.env
