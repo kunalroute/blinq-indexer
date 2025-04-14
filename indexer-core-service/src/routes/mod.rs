@@ -1,9 +1,10 @@
-use actix_web::{web};
-use crate::handlers::health_check;
-use crate::handlers::get_orders;
+use actix_web::web;
 
-pub fn setup_routes(cfg: &mut web::ServiceConfig) {
-    cfg.route("/health", web::get().to(health_check));
-    cfg.route("/orders", web::get().to(get_orders));
+pub mod health;
+pub mod order;
+
+pub fn configure_routes(cfg: &mut web::ServiceConfig) {
+    cfg
+        .service(health::health_routes())
+        .service(order::order_routes());
 }
-
