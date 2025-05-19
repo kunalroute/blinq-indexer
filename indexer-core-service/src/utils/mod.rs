@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use reqwest::Client;
 
@@ -35,20 +36,24 @@ pub struct FeeDetails {
 ///     Err(e) => eprintln!("Error: {}", e),
 /// }
 /// ```
-async fn fetch_cctp_transaction_status() -> Result<TransactionDetails, Box<dyn std::error::Error>> {
+async fn fetch_cctp_transaction_status(hash: &str) -> Result<TransactionDetails, Box<dyn std::error::Error>> {
+    println!("fetch_cctp_transaction_status");
+
     let client = Client::new();
     let response: Value = client.get(CCTP_API_URL).send().await?.json().await?;
 
-    let resource = &response["resources"][0];
-    let bridge_info = &resource["bridge_info"];
+    let request = &response["request"][0];
+    let bridge_info = &request["bridge_info"];
+
+    print!("Bridge Info for hash {} : {:?}", hash, bridge_info);
 
     Ok(TransactionDetails {
-        source_token: resource["sender_entity"].as_str().unwrap_or_default().to_string(),
-        source_amount: resource["sender_amount"].as_f64().unwrap_or_default(),
-        source_symbol: resource["sender_symbol"].as_str().unwrap_or_default().to_string(),
-        dest_token: resource["receiver_entity"].as_str().unwrap_or_default().to_string(),
-        dest_amount: resource["usd"].as_f64().unwrap_or_default(),
-        dest_symbol: resource["sender_symbol"].as_str().unwrap_or_default().to_string(),
+        source_token: bridge_info["sender_entity"].as_str().unwrap_or_default().to_string(),
+        source_amount: bridge_info["sender_amount"].as_f64().unwrap_or_default(),
+        source_symbol: bridge_info["sender_symbol"].as_str().unwrap_or_default().to_string(),
+        dest_token: bridge_info["receiver_entity"].as_str().unwrap_or_default().to_string(),
+        dest_amount: bridge_info["usd"].as_f64().unwrap_or_default(),
+        dest_symbol: bridge_info["sender_symbol"].as_str().unwrap_or_default().to_string(),
         fee: None, // CCTP response does not include fee details
     })
 }
@@ -70,6 +75,8 @@ async fn fetch_cctp_transaction_status() -> Result<TransactionDetails, Box<dyn s
 /// }
 /// ```
 async fn fetch_relay_transaction_status(hash: &str) -> Result<TransactionDetails, Box<dyn std::error::Error>> {
+    println!("fetch_relay_transaction_status");
+    
     let client = Client::new();
     let url = format!("{}?hash={}", RELAY_API_URL, hash);
     let response: Value = client.get(&url).send().await?.json().await?;
@@ -77,6 +84,8 @@ async fn fetch_relay_transaction_status(hash: &str) -> Result<TransactionDetails
     let request = &response["requests"][0];
     let metadata = &request["data"]["metadata"];
     let fees = &request["data"]["feesUsd"];
+
+    print!("Relay Metadata for hash {} : {:?}", hash, metadata);
 
     Ok(TransactionDetails {
         source_token: metadata["currencyIn"]["currency"]["address"].as_str().unwrap_or_default().to_string(),
@@ -111,7 +120,9 @@ async fn fetch_relay_transaction_status(hash: &str) -> Result<TransactionDetails
 /// }
 /// ```
 pub async fn fetch_transaction_status(hash: &str) -> Result<TransactionDetails, Box<dyn std::error::Error>> {
-    let cctp_result = fetch_cctp_transaction_status().await;
+    println!("fetch_transaction_status");
+
+    let cctp_result = fetch_cctp_transaction_status(hash).await;
     if cctp_result.is_ok() {
         return cctp_result;
     }
