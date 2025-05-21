@@ -1,17 +1,30 @@
+use std::env;
+
 use actix_web::{App, HttpServer};
 
-mod routes;
-mod handlers;
+mod config;
 mod models;
+mod modules;
 mod utils;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let server = HttpServer::new(|| {
+    
+    if std::env::var_os("RUST_LOG").is_none() {
+        std::env::set_var("RUST_LOG", "actix_web=info");
+    }
+    
+    dotenv::dotenv().ok(); // load env
+    env_logger::init(); // load RUST_LOG for logging
+
+    // Read environment variables
+    let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
+
+    HttpServer::new(|| {
         App::new()
-            .configure(crate::routes::configure_routes)
+            .configure(crate::config::config_routes) // Call the config function to set up routes
     })
-    .bind("127.0.0.1:8080")?;
-    println!("🚀 Server started at http://127.0.0.1:8080");
-    server.run().await
+    .bind(format!("127.0.0.1:{}", port))?
+    .run()
+    .await
 }
