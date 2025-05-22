@@ -1,15 +1,15 @@
-use actix_web::{get, HttpResponse, Responder, web::Query};
+use actix_web::{get, web::{self, Query}, HttpResponse, Responder};
 
 use crate::modules::orders::services as orders_service;
 
 #[derive(serde::Deserialize)]
-pub struct GetOrdersParams {
+pub struct OrderRequestDTO {
     pub hash: String,
 }
 
-#[get("/orders")]
-async fn get_orders(params: Query<GetOrdersParams>) -> impl Responder {
-    let hash = &params.hash;
+#[get("/api/orders")]
+async fn get_orders(order_request_dto: web::Query<OrderRequestDTO>) -> impl Responder {
+    let hash = &order_request_dto.hash;
     match orders_service::get_orders(hash).await {
         Ok(orders) => HttpResponse::Ok().json(orders),
         Err(e) => {

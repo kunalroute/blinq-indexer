@@ -5,7 +5,7 @@ use reqwest::Client;
 const CCTP_API_URL: &str = "https://usdc.range.org/api/payments?...";
 const RELAY_API_URL: &str = "https://api.relay.link/requests/v2";
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct TransactionDetails {
     source_token: String,
     source_amount: f64,
@@ -14,6 +14,8 @@ pub struct TransactionDetails {
     dest_amount: f64,
     dest_symbol: String,
     fee: Option<FeeDetails>,
+    sender: String,
+    recipient: String
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -55,6 +57,8 @@ async fn fetch_cctp_transaction_status(hash: &str) -> Result<TransactionDetails,
         dest_amount: bridge_info["usd"].as_f64().unwrap_or_default(),
         dest_symbol: bridge_info["sender_symbol"].as_str().unwrap_or_default().to_string(),
         fee: None, // CCTP response does not include fee details
+        sender: String::new(),
+        recipient: String::new()
     })
 }
 
@@ -85,7 +89,7 @@ async fn fetch_relay_transaction_status(hash: &str) -> Result<TransactionDetails
     let metadata = &request["data"]["metadata"];
     let fees = &request["data"]["feesUsd"];
 
-    print!("Relay Metadata for hash {} : {:?}", hash, metadata);
+    print!("Relay Metadata for hash: {:?}", metadata);
 
     Ok(TransactionDetails {
         source_token: metadata["currencyIn"]["currency"]["address"].as_str().unwrap_or_default().to_string(),
@@ -99,6 +103,8 @@ async fn fetch_relay_transaction_status(hash: &str) -> Result<TransactionDetails
             fixed: fees["fixed"].as_str().unwrap_or_default().parse().ok(),
             price: fees["price"].as_str().unwrap_or_default().parse().ok(),
         }),
+        sender: metadata["sender"].as_str().unwrap_or_default().to_string(),
+        recipient: metadata["recipient"].as_str().unwrap_or_default().to_string()
     })
 }
 

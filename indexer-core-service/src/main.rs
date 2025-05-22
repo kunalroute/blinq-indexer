@@ -1,6 +1,7 @@
 use std::env;
 
 use actix_web::{App, HttpServer};
+use modules::{health::handlers::get_health, orders::handlers::get_orders};
 
 mod config;
 mod models;
