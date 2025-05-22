@@ -7,9 +7,11 @@ const RELAY_API_URL: &str = "https://api.relay.link/requests/v2";
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct TransactionDetails {
+    source_chain_id: String,
     source_token: String,
     source_amount: f64,
     source_symbol: String,
+    dest_chain_id: String,
     dest_token: String,
     dest_amount: f64,
     dest_symbol: String,
@@ -50,9 +52,11 @@ async fn fetch_cctp_transaction_status(hash: &str) -> Result<TransactionDetails,
     print!("Bridge Info for hash {} : {:?}", hash, bridge_info);
 
     Ok(TransactionDetails {
+        source_chain_id: bridge_info["source_chainId"].as_str().unwrap_or_default().to_string(),
         source_token: bridge_info["sender_entity"].as_str().unwrap_or_default().to_string(),
         source_amount: bridge_info["sender_amount"].as_f64().unwrap_or_default(),
         source_symbol: bridge_info["sender_symbol"].as_str().unwrap_or_default().to_string(),
+        dest_chain_id: bridge_info["dest_chainId"].as_str().unwrap_or_default().to_string(),
         dest_token: bridge_info["receiver_entity"].as_str().unwrap_or_default().to_string(),
         dest_amount: bridge_info["usd"].as_f64().unwrap_or_default(),
         dest_symbol: bridge_info["sender_symbol"].as_str().unwrap_or_default().to_string(),
@@ -89,12 +93,18 @@ async fn fetch_relay_transaction_status(hash: &str) -> Result<TransactionDetails
     let metadata = &request["data"]["metadata"];
     let fees = &request["data"]["feesUsd"];
 
+
+    print!("Relay chains ids: {}, {}", metadata["currencyIn"]["currency"]["chainId"], metadata["currencyOut"]["currency"]["chainId"]);
+
     print!("Relay Metadata for hash: {:?}", metadata);
 
+
     Ok(TransactionDetails {
+        source_chain_id: metadata["currencyIn"]["currency"]["chainId"].to_string(),
         source_token: metadata["currencyIn"]["currency"]["address"].as_str().unwrap_or_default().to_string(),
         source_amount: metadata["currencyIn"]["amountFormatted"].as_str().unwrap_or_default().parse().unwrap_or_default(),
         source_symbol: metadata["currencyIn"]["currency"]["symbol"].as_str().unwrap_or_default().to_string(),
+        dest_chain_id: metadata["currencyOut"]["currency"]["chainId"].to_string(),
         dest_token: metadata["currencyOut"]["currency"]["address"].as_str().unwrap_or_default().to_string(),
         dest_amount: metadata["currencyOut"]["amountFormatted"].as_str().unwrap_or_default().parse().unwrap_or_default(),
         dest_symbol: metadata["currencyOut"]["currency"]["symbol"].as_str().unwrap_or_default().to_string(),
